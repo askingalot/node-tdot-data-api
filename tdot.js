@@ -21,12 +21,10 @@ var _https = require('https'),
 
 module.exports = {
   setKey: function (key) {
-    if (!!key) {
-      return _key = key.toString();
+    if (!key) {
+      throw new Error('You must provide an API key');
     }
-    else {
-      return 'You did not enter a correct value';
-    }
+    return _key = key.toString();
   },
   getKey: function(){
     return _key;
@@ -41,10 +39,10 @@ module.exports = {
       }
     };
     if (typeof _key !== 'string') {
-      return 'Please set the key';
+      throw new Error('You must provide an API key');
     }
     if (typeof endpoint !== 'string') {
-      return 'The endpoint must be a string';
+      throw new Error('The endpoint must be a string');
     }
     _https.get(options, function (res) {
       //console.log('STATUS: ' + res.statusCode);

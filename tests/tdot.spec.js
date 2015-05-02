@@ -14,8 +14,7 @@ describe('tdot', function() {
   describe('setKey', function() {
 
     it('should require a key', function() {
-      var keyResponse = tdot.setKey();
-      expect(keyResponse).toBe('You did not enter a correct value');
+      expect( function() { tdot.setKey() }).toThrow(new Error('You must provide an API key'));
     });
 
     it('should return key as a string', function() {
@@ -46,33 +45,55 @@ describe('tdot', function() {
     mockery.registerMock('https', mockHttps);
     mockery.enable();
 
-    beforeEach(function() {
-      tdot.setKey(TEST_KEY);
+    describe('without api key', function() {
+      it('should require an api key to be set before calling getData', function() {
+        expect( function() { 
+          tdot.getData(A_NUMBER, function() {}); 
+        }).toThrow(new Error('You must provide an API key'));
+      });
     });
 
-    it('should require endpoint be a string', function() {
-      var errorResult = tdot.getData(A_NUMBER, function() {});
-      expect(errorResult).toBe('The endpoint must be a string');
-    });
-
-    it('should call https.get() function', function() {
-      tdot.getData(endpoint, function() {});
-      expect(mockHttps.get).toHaveBeenCalled();
-    });
-
-    it('should call https.get() with expected options', function() {
-      var httpsGetOptions;
-      mockHttps.get.andCallFake(function(options) {
-        httpsGetOptions = options;
+    describe('with api key', function() {
+      beforeEach(function() {
+        tdot.setKey(TEST_KEY);
       });
 
-      tdot.getData(endpoint, function() {});
+      it('should require endpoint be a string', function() {
+        expect( function() { 
+          tdot.getData(A_NUMBER, function() {});
+        }).toThrow(new Error('The endpoint must be a string'));
+      });
 
-      expect( httpsGetOptions.hostname ).toBe('www.tdot.tn.gov');
-      expect( httpsGetOptions.path ).toBe('/opendata/api/data/' + endpoint);
-      expect( httpsGetOptions.headers.Accept ).toBe('Application/hal+json');
-      expect( httpsGetOptions.headers.ApiKey ).toBe(TEST_KEY);
+      it('should call https.get() function', function() {
+        tdot.getData(endpoint, function() {});
+        expect(mockHttps.get).toHaveBeenCalled();
+      });
 
+      it('should call https.get() with expected options', function() {
+        var httpsGetOptions;
+        mockHttps.get.andCallFake(function(options) {
+          httpsGetOptions = options;
+        });
+
+        tdot.getData(endpoint, function() {});
+
+        expect( httpsGetOptions.hostname ).toBe('www.tdot.tn.gov');
+        expect( httpsGetOptions.path ).toBe('/opendata/api/data/' + endpoint);
+        expect( httpsGetOptions.headers.Accept ).toBe('Application/hal+json');
+        expect( httpsGetOptions.headers.ApiKey ).toBe(TEST_KEY);
+
+      });
+
+      it('should call https.get() with a callback function', function() {
+        var httpGetCallback;
+        mockHttps.get.andCallFake(function(options, callback) {
+          httpGetCallback = callback;
+        });
+
+        tdot.getData(endpoint, function() {});
+
+        expect( httpGetCallback ).toEqual(jasmine.any(Function));
+      });
     });
   });
 });
